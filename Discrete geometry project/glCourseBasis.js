@@ -162,7 +162,7 @@ Points3D.draw = function()
 
 
 // =====================================================
-// SPHERE
+// SPHERE --> SPHERE
 // =====================================================
 
 var Sphere = { fname: 'sphere', loaded:-1, shader:null };
