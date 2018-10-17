@@ -364,6 +364,157 @@ Tor.draw = function()
 
 
 
+
+// =====================================================
+// Bezier Surface
+// =====================================================
+
+var BSurface = { fname: 'bsurface', loaded:-1, shader:null };
+
+function bezier(k, mu, n)
+{
+	var k, mu, n;
+	var nn,kn,nkn;
+	var blend=1;
+
+	nn = n;
+	kn = k;
+	nkn = n - k;
+
+	while(nn >= 1) {
+		blend *= nn;
+		nn--;
+		
+		if(kn > 1) {
+			blend /= kn;
+			kn--;
+		}
+		
+		if(nkn > 1) {
+			blend /= nkn;
+			nkn--;
+		}
+	}
+	
+	if (k > 0)
+		blend *= Math.pow(mu,k);
+	
+	if (n-k > 0)
+		blend *= Math.pow(1-mu, (n-k));
+
+	return blend;
+}
+ 
+BSurface.initAll = function()
+{
+	var i, j, ki, kj;
+	var mui,muj,bi,bj;
+	var ni = 5;
+	var nj = 4;
+	var controlPoints = [ni * nj];
+	var iResolution = 100 * ni;
+	var jResolution = 100 * nj;
+	var out = [iResolution * jResolution];
+			
+	var size = 20
+	
+	for(i = 0; i <= ni; i++) {
+		for(j = 0; j <= nj; j++) {
+			var x = i/size;
+			var y = j/size - 0.5;
+			var z = Math.floor((Math.random() * 10) + 1)/size;
+			controlPoints[i * ni + j] = [x, y, z];
+		}
+	}
+   
+	for( i = 0; i < iResolution; i++) {
+		mui = i / (iResolution-1);
+		
+		for( j = 0; j < jResolution; j++) {
+			muj = j / (jResolution-1);
+			out[i * ni + j] = [0, 0, 0];
+			
+			for(ki = 0; ki <= ni; ki++) {
+				bi = bezier(ki, mui, ni);
+				
+				for(kj = 0; kj <= nj; kj++) {
+					bj = bezier(kj, muj, nj);
+					out[i * ni + j][0] += (controlPoints[ki * ni + kj][0] * bi * bj);
+					out[i * ni + j][1] += (controlPoints[ki * ni + kj][1] * bi * bj);
+					out[i * ni + j][2] += (controlPoints[ki * ni + kj][2] * bi * bj);
+				}
+			}
+		}
+	}
+   
+	var vertices = [];
+	
+	for (i=0;i<iResolution-1;i++) {
+		for (j=0;j<jResolution-1;j++) {
+			var p1 = i * ni + j;
+			var p2 = (i + 1) * ni + j;
+			var p3 = i * ni + j + 1;
+			var p4 = (i + 1) * ni + j + 1;
+			
+			vertices.push(out[p1][0], out[p1][1], out[p1][2]);
+			vertices.push(out[p3][0], out[p3][1], out[p3][2]);
+			vertices.push(out[p4][0], out[p4][1], out[p4][2]);
+			
+			vertices.push(out[p1][0], out[p1][1], out[p1][2]);
+			vertices.push(out[p4][0], out[p4][1], out[p4][2]);
+			vertices.push(out[p2][0], out[p2][1], out[p2][2]);
+		}
+	}
+   
+	this.vBuffer5 = gl.createBuffer();
+	gl.bindBuffer(gl.ARRAY_BUFFER, this.vBuffer5);
+	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+	this.vBuffer5.itemSize = 3;
+	this.vBuffer5.numItems = (iResolution-1) * (jResolution-1) * 6;
+
+	console.log("BSurface : init buffers ok.");
+
+	loadShaders(this);
+
+	console.log("BSurface : shaders loading...");
+}
+
+	
+// =====================================================
+BSurface.setShadersParams = function()
+{
+	console.log("BSurface : setting shader parameters...")
+	gl.useProgram(this.shader);
+
+	this.shader.vAttrib5 = gl.getAttribLocation(this.shader, "vPosBSurface");
+	gl.enableVertexAttribArray(this.shader.vAttrib5);
+
+	gl.bindBuffer(gl.ARRAY_BUFFER, this.vBuffer5);
+	gl.vertexAttribPointer(this.shader.vAttrib5, this.vBuffer5.itemSize, gl.FLOAT, false, 0, 0);
+
+	this.shader.pMatrixUniform = gl.getUniformLocation(this.shader, "uPMatrix");
+	this.shader.mvMatrixUniform = gl.getUniformLocation(this.shader, "uMVMatrix");
+
+	console.log("BSurface : parameters ok.")
+
+}
+
+// =====================================================
+BSurface.draw = function()
+{
+	if(this.shader) {		
+			this.setShadersParams();
+			setMatrixUniforms(this);
+			gl.drawArrays(gl.TRIANGLE_FAN, 0, this.vBuffer5.numItems);
+			gl.drawArrays(gl.LINE_LOOP, 0, this.vBuffer5.numItems);
+	}
+}
+
+
+
+
+
+
 // =====================================================
 // FONCTIONS GENERALES, INITIALISATIONS
 // =====================================================
@@ -493,7 +644,7 @@ function setMatrixUniforms(Obj3D) {
 // =====================================================
 function shadersOk()
 {
-	if(Plane3D.loaded == 4 && Points3D.loaded == 4 && Sphere.loaded == 4 && Tor.loaded == 4) return true;
+	if(Plane3D.loaded == 4 && Points3D.loaded == 4 && Sphere.loaded == 4 && Tor.loaded == 4 && BSurface.loaded == 4) return true;
 
 	if(Plane3D.loaded < 0) {
 		Plane3D.loaded = 0;
@@ -519,6 +670,12 @@ function shadersOk()
 		return false;
 	}
 	
+	if(Plane3D.loaded == 4 && BSurface.loaded < 0) {
+		BSurface.loaded = 0;
+		BSurface.initAll();
+		return false;
+	}
+	
 	return false;
 
 }
@@ -532,6 +689,7 @@ function drawScene() {
 		Points3D.draw();
 		Sphere.draw();
 		Tor.draw();
+		BSurface.draw();
 	}
 
 }
