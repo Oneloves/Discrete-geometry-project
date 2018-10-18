@@ -165,6 +165,7 @@ Points3D.draw = function()
 // SPHERE
 // =====================================================
 
+		
 var Sphere = { fname: 'sphere', loaded:-1, shader:null };
 
 // =====================================================
@@ -173,7 +174,7 @@ function sphericalCoordinate(theta, phi) {
 	var y = Math.sin(theta) * Math.sin(phi);
 	var z = Math.cos(theta);
 	
-	return [0.4+x/4, 0.2+y/4, 0.3+z/4];
+	return [sliderSphereTranslateX.value/10 + x/4, 0.2+y/4, 0.3+z/4];
 }
 
 // =====================================================
