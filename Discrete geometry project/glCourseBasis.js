@@ -174,7 +174,7 @@ function sphericalCoordinate(theta, phi) {
 	var y = Math.sin(theta) * Math.sin(phi);
 	var z = Math.cos(theta);
 	
-	return [sliderSphereTranslateX.value/10 + x/4, 0.2+y/4, 0.3+z/4];
+	return [x/4, 0.2+y/4, 0.3+z/4];
 }
 
 // =====================================================
@@ -242,6 +242,9 @@ Sphere.setShadersParams = function()
 
 	this.shader.pMatrixUniform = gl.getUniformLocation(this.shader, "uPMatrix");
 	this.shader.mvMatrixUniform = gl.getUniformLocation(this.shader, "uMVMatrix");
+
+	var transX = gl.getUniformLocation(this.shader, "transX");
+	gl.uniform1f(transX, sliderSphereTranslateX.value/10);
 
 	console.log("Sphere : parameters ok.")
 
