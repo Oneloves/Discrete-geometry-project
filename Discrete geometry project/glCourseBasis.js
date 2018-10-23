@@ -162,7 +162,7 @@ Points3D.draw = function()
 
 
 // =====================================================
-// SPHERE --> SPHERE
+// SPHERE
 // =====================================================
 
 		
@@ -175,6 +175,24 @@ function sphericalCoordinate(theta, phi,scale,center) {
 	var z = Math.cos(theta);
 	
 	return [x*scale+center[0],y*scale+center[1],z*scale+center[2]];
+}
+
+function sub(a, b){
+	var x= b[0]-a[0];
+	var y= b[1]-a[1];
+	var z= b[1]-a[1];
+	return [x,y,z];
+}
+
+function norm(a){
+	var x= a[0]/lenght(a);
+	var y= a[1]/lenght(a);
+	var z= a[2]/lenght(a);
+	return [x,y,z];
+}
+
+function lenght(a){
+	return Math.sqrt(a[0]*a[0]+a[1]*a[1]+a[2]*a[2]);
 }
 
 // =====================================================
