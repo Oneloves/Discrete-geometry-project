@@ -169,17 +169,19 @@ Points3D.draw = function()
 var Sphere = { fname: 'sphere', loaded:-1, shader:null };
 
 // =====================================================
-function sphericalCoordinate(theta, phi) {
+function sphericalCoordinate(theta, phi,scale,center) {
 	var x = Math.sin(theta) * Math.cos(phi);
 	var y = Math.sin(theta) * Math.sin(phi);
 	var z = Math.cos(theta);
 	
-	return [x/4, 0.2+y/4, 0.3+z/4];
+	return [x*scale+center[0],y*scale+center[1],z*scale+center[2]];
 }
 
 // =====================================================
 Sphere.initAll = function()
 {
+	var center = [0,0,0.2];
+	var scale =0.25;
 	var i, j;
 	var nbT = 10;
 	var nbP = 2 * nbT;
@@ -196,10 +198,10 @@ Sphere.initAll = function()
 			var ph1 = j * dp;
 			var ph2 = (j+1) * dp;
 			
-			var p1 = sphericalCoordinate(th1, ph1);
-			var p2 = sphericalCoordinate(th1, ph2);
-			var p3 = sphericalCoordinate(th2, ph1);
-			var p4 = sphericalCoordinate(th2, ph2);
+			var p1 = sphericalCoordinate(th1, ph1,scale,center);
+			var p2 = sphericalCoordinate(th1, ph2,scale,center);
+			var p3 = sphericalCoordinate(th2, ph1,scale,center);
+			var p4 = sphericalCoordinate(th2, ph2,scale,center);
 			
 			//triangle 1
 			vertices.push(p1[0], p1[1], p1[2]);
