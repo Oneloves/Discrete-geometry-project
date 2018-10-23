@@ -5,6 +5,7 @@ var gl;
 var mvMatrix = mat4.create();
 var pMatrix = mat4.create();
 var objMatrix = mat4.create();
+var lumiere = [0,0,1];
 // =====================================================
 
 
@@ -177,10 +178,15 @@ function sphericalCoordinate(theta, phi,scale,center) {
 	return [x*scale+center[0],y*scale+center[1],z*scale+center[2]];
 }
 
-function sub(a, b){
-	var x= b[0]-a[0];
-	var y= b[1]-a[1];
-	var z= b[1]-a[1];
+function sphereNormal(xyz, center){
+	var ab = sub(xyz,center);
+	return norm(ab);
+}
+
+function sub(b,a){
+	var x = b[0]-a[0];
+	var y = b[1]-a[1];
+	var z = b[2]-a[2];
 	return [x,y,z];
 }
 
@@ -198,15 +204,16 @@ function lenght(a){
 // =====================================================
 Sphere.initAll = function()
 {
-	var center = [0,0,0.2];
+	var center = [0.1,0,0.4];
 	var scale =0.25;
 	var i, j;
-	var nbT = 10;
+	var nbT = 15;
 	var nbP = 2 * nbT;
 	var dt = Math.PI / nbT;
 	var dp = 2 * Math.PI / nbP;
 	
 	var vertices = [];
+	var normals = [];
 	
 	for(i = 0; i < nbT; i++) {
 		var th1 = i * dt;
@@ -217,9 +224,23 @@ Sphere.initAll = function()
 			var ph2 = (j+1) * dp;
 			
 			var p1 = sphericalCoordinate(th1, ph1,scale,center);
-			var p2 = sphericalCoordinate(th1, ph2,scale,center);
-			var p3 = sphericalCoordinate(th2, ph1,scale,center);
+			var p2 = sphericalCoordinate(th1, ph2,scale,center);			
+			var p3 = sphericalCoordinate(th2, ph1,scale,center);			
 			var p4 = sphericalCoordinate(th2, ph2,scale,center);
+			
+			//normals
+			var n1 = sphereNormal(p1,center);
+			var n2 = sphereNormal(p2,center);
+			var n3 = sphereNormal(p3,center);
+			var n4 = sphereNormal(p4,center);
+			
+			normals.push(n1[0],n1[1],n2[2]);
+			normals.push(n3[0],n3[1],n3[2]);
+			normals.push(n4[0],n4[1],n4[2]);
+			
+			normals.push(n1[0],n1[1],n2[2]);
+			normals.push(n4[0],n4[1],n4[2]);
+			normals.push(n2[0],n2[1],n2[2]);
 			
 			//triangle 1
 			vertices.push(p1[0], p1[1], p1[2]);
@@ -239,8 +260,16 @@ Sphere.initAll = function()
 	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
 	this.vBuffer3.itemSize = 3;
 	this.vBuffer3.numItems = nbT * nbP * 6;
+	
+	this.nBuffer3 = gl.createBuffer();
+	gl.bindBuffer(gl.ARRAY_BUFFER, this.nBuffer3);
+	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(normals), gl.STATIC_DRAW);
+	this.nBuffer3.itemSize = 3;
+	this.nBuffer3.numItems = nbT * nbP * 6;
 
 	console.log("Sphere : init buffers ok.");
+	
+	console.log(normals);
 
 	loadShaders(this);
 
@@ -256,15 +285,23 @@ Sphere.setShadersParams = function()
 
 	this.shader.vAttrib3 = gl.getAttribLocation(this.shader, "vPosSphere");
 	gl.enableVertexAttribArray(this.shader.vAttrib3);
-
 	gl.bindBuffer(gl.ARRAY_BUFFER, this.vBuffer3);
 	gl.vertexAttribPointer(this.shader.vAttrib3, this.vBuffer3.itemSize, gl.FLOAT, false, 0, 0);
 
+	this.shader.nAttrib3 = gl.getAttribLocation(this.shader, "vNormal");
+	gl.enableVertexAttribArray(this.shader.nAttrib3);
+	gl.bindBuffer(gl.ARRAY_BUFFER, this.nBuffer3);
+	gl.vertexAttribPointer(this.shader.nAttrib3, this.nBuffer3.itemSize, gl.FLOAT, false, 0, 0);
+	
+	
 	this.shader.pMatrixUniform = gl.getUniformLocation(this.shader, "uPMatrix");
 	this.shader.mvMatrixUniform = gl.getUniformLocation(this.shader, "uMVMatrix");
 
 	var transX = gl.getUniformLocation(this.shader, "transX");
 	gl.uniform1f(transX, sliderSphereTranslateX.value/10);
+	
+	var lum = gl.getUniformLocation(this.shader,"lumPos");
+	gl.uniform3f(lum,lumiere[0],lumiere[1],lumiere[2]);
 
 	console.log("Sphere : parameters ok.")
 
@@ -276,7 +313,7 @@ Sphere.draw = function()
 	if(this.shader) {		
 			this.setShadersParams();
 			setMatrixUniforms(this);
-			gl.drawArrays(gl.TRIANGLE_FAN, 0, this.vBuffer3.numItems);
+			gl.drawArrays(gl.TRIANGLES, 0, this.vBuffer3.numItems);
 			gl.drawArrays(gl.LINE_LOOP, 0, this.vBuffer3.numItems);
 	}
 }
@@ -379,7 +416,7 @@ Tor.draw = function()
 	if(this.shader) {		
 			this.setShadersParams();
 			setMatrixUniforms(this);
-			gl.drawArrays(gl.TRIANGLE_FAN, 0, this.vBuffer4.numItems);
+			gl.drawArrays(gl.TRIANGLES, 0, this.vBuffer4.numItems);
 			gl.drawArrays(gl.LINE_LOOP, 0, this.vBuffer4.numItems);
 	}
 }
@@ -529,7 +566,7 @@ BSurface.draw = function()
 	if(this.shader) {		
 			this.setShadersParams();
 			setMatrixUniforms(this);
-			gl.drawArrays(gl.TRIANGLE_FAN, 0, this.vBuffer5.numItems);
+			gl.drawArrays(gl.TRIANGLES, 0, this.vBuffer5.numItems);
 			gl.drawArrays(gl.LINE_LOOP, 0, this.vBuffer5.numItems);
 	}
 }
@@ -713,7 +750,7 @@ function drawScene() {
 		Points3D.draw();
 		Sphere.draw();
 		Tor.draw();
-		BSurface.draw();
+		//BSurface.draw();
 	}
 
 }
