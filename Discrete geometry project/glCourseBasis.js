@@ -4,8 +4,9 @@ var gl;
 // =====================================================
 var mvMatrix = mat4.create();
 var pMatrix = mat4.create();
+var rMatrix = mat4.create();
 var objMatrix = mat4.create();
-var lumiere = [0,0,1];
+var lumiere = [0,0,5];
 // =====================================================
 
 
@@ -265,6 +266,7 @@ Sphere.setShadersParams = function()
 	
 	this.shader.pMatrixUniform = gl.getUniformLocation(this.shader, "uPMatrix");
 	this.shader.mvMatrixUniform = gl.getUniformLocation(this.shader, "uMVMatrix");
+	this.shader.rMatrixUniform = gl.getUniformLocation(this.shader, "uRMatrix");	
 
 	var transX = gl.getUniformLocation(this.shader, "transX");
 	gl.uniform1f(transX, sliderSphereTranslateX.value/10);
@@ -280,7 +282,6 @@ Sphere.draw = function()
 			this.setShadersParams();
 			setMatrixUniforms(this);
 			gl.drawArrays(gl.TRIANGLES, 0, this.vBuffer3.numItems);
-			gl.drawArrays(gl.LINE_LOOP, 0, this.vBuffer3.numItems);
 	}
 }
 
@@ -1162,7 +1163,10 @@ function setMatrixUniforms(Obj3D) {
 		mat4.identity(mvMatrix);
 		mat4.translate(mvMatrix, [0.0, 0.0, -2.0]);
 		mat4.multiply(mvMatrix, objMatrix);
+		mat4.identity(rMatrix);
+		mat4.multiply(rMatrix, objMatrix);
 		gl.uniformMatrix4fv(Obj3D.shader.pMatrixUniform, false, pMatrix);
+		gl.uniformMatrix4fv(Obj3D.shader.rMatrixUniform, false, rMatrix);
 		gl.uniformMatrix4fv(Obj3D.shader.mvMatrixUniform, false, mvMatrix);
 }
 

@@ -8,7 +8,7 @@ varying vec3 H;
 
 void main(void)
 {
-	float rug = 0.1;	
+	float rug = 0.2;	
 	//coef spéculaire de cook
 	
 	vec3 l = normalize(L);
@@ -49,8 +49,11 @@ void main(void)
 	float ka =0.2;
 	
 	float co = kd *clamp(dot(n,l),0.0,1.0)+ ka;
-	co += ks;
+
 	vec3 couleur = vec3(1,0,1)*co;
+	
+	couleur += ks;
+	
 	couleur = clamp(couleur,0.0,1.0);
 	
 	gl_FragColor = vec4(couleur,1.0);
