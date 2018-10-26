@@ -1,4 +1,3 @@
-
 precision mediump float;
 
 varying vec3 norm;
@@ -17,7 +16,7 @@ void main(void)
 
 	lambert+=0.1;
 	
-	gl_FragColor = vec4(vec3(lambert),1.0);
+	gl_FragColor = vec4(0.0, 0.0, 0.3, 1.0);
 }
 
 

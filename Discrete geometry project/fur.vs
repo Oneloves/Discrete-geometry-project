@@ -1,4 +1,4 @@
-attribute vec3 vPosBSurface;
+attribute vec3 vPosFur;
 attribute vec3 vNormal;
 
 uniform mat4 uMVMatrix;
@@ -9,6 +9,6 @@ varying vec3 norm;
 
 void main(void) {
 	norm = vNormal;
-	dirLum = normalize(vec3(0.0, 0.0, 1.0)-vPosBSurface);
-	gl_Position = uPMatrix * uMVMatrix * vec4(vPosBSurface, 1.0);
+	dirLum = normalize(vec3(0.0, 0.0, 1.0)-vPosFur);
+	gl_Position = uPMatrix * uMVMatrix * vec4(vPosFur, 1.0);
 }
