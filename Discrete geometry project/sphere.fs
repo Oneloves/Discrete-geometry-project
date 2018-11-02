@@ -18,10 +18,13 @@ void main(void)
 
 	//beckman
 	float c = dot(n,h);
+	c = max(0.0,c);
 	float tan2 = (1.0-c*c)/(c*c);
 	float cos4 = pow(c,4.0);
 	float m2 = rug*rug;
-	float D = (exp((-tan2)/m2))/(M_PI*m2*cos4);
+	float dessus = exp(-tan2/m2);
+	float dessous = M_PI*m2*cos4;
+	float D = dessus/dessous;
 	
 	//coeff G dans cook
 	float t1 = (2.0*dot(h,n)*dot(v,n))/(dot(v,h));
