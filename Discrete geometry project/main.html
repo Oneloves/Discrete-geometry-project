@@ -21,15 +21,49 @@
 		</div>
 		
 		<div id="right">
+			<hr/>
 			<div class="slidecontainer">
-			  <input type="range" min="0" max="10" value="4" class="slider" id="sphereTranslateX">
-			  <p>Value X: <span id="sphereTranslateXText"></span></p>
+			  <input type="range" min="-100" max="100" value="0" class="slider" id="lumX">
+			  <p>Value X: <span id="lumXText"></span></p>
+			</div>			
+			<div class="slidecontainer">
+			  <input type="range" min="-100" max="100" value="-18" class="slider" id="lumY">
+			  <p>Value Y: <span id="lumYText"></span></p>
+			</div>		
+			<div class="slidecontainer">
+			  <input type="range" min="-100" max="100" value="0" class="slider" id="lumZ">
+			  <p>Value Z: <span id="lumZText"></span></p>
 			</div>
+			<hr/>
 		</div>
 		
 	</div>	
 		
 	<script>
+		<!-- Lum -->
+		var sliderLumX = document.getElementById("lumX");
+		var outputLumX = document.getElementById("lumXText");
+		outputLumX.innerHTML = sliderLumX.value/10;
+		sliderLumX.oninput = function() {
+			outputLumX.innerHTML = this.value/10;
+		}
+		
+		var sliderLumY = document.getElementById("lumY");
+		var outputLumY = document.getElementById("lumYText");
+		outputLumY.innerHTML = sliderLumY.value/10;
+		sliderLumY.oninput = function() {
+			outputLumY.innerHTML = this.value/10;
+		}
+		
+		var sliderLumZ = document.getElementById("lumZ");
+		var outputLumZ = document.getElementById("lumZText");
+		outputLumZ.innerHTML = sliderLumZ.value/10;
+		sliderLumZ.oninput = function() {
+			outputLumZ.innerHTML = this.value/10;
+		}
+
+		
+		<!-- Sphere -->
 		var sliderSphereTranslateX = document.getElementById("sphereTranslateX");
 		var outputSphereTranslateX = document.getElementById("sphereTranslateXText");
 		outputSphereTranslateX.innerHTML = sliderSphereTranslateX.value/10;
@@ -37,6 +71,7 @@
 		sliderSphereTranslateX.oninput = function() {
 			outputSphereTranslateX.innerHTML = this.value/10;
 		}
+		
 	</script>
 	
 </body>

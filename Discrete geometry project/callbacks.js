@@ -8,6 +8,7 @@ var lastMouseX = null;
 var lastMouseY = null;
 var rotZ = 0;
 var rotX = 0;
+var transZ = 0;
 
 // =====================================================
 window.requestAnimFrame = (function()
@@ -42,31 +43,48 @@ function handleMouseDown(event) {
 	lastMouseY = event.clientY;
 }
 
-
 // =====================================================
 function handleMouseUp(event) {
 	mouseDown = false;
 }
 
+function handleEvent(event){
+}
 
 // =====================================================
 function handleMouseMove(event) {
+	
 	if (!mouseDown) {
 		return;
 	}
-	var newX = event.clientX;
-	var newY = event.clientY;
+	
+	if(event.buttons == 1) {	
+		var newX = event.clientX;
+		var newY = event.clientY;
 
-	var deltaX = newX - lastMouseX;
-	var deltaY = newY - lastMouseY;
+		var deltaX = newX - lastMouseX;
+		var deltaY = newY - lastMouseY;
 
-	rotX += degToRad(deltaY / 2);
-	rotZ += degToRad(deltaX / 2);
+		rotX += degToRad(deltaY / 2);
+		rotZ += degToRad(deltaX / 2);
 
-	mat4.identity(objMatrix);
-	mat4.rotate(objMatrix, rotX, [1, 0, 0]);
-	mat4.rotate(objMatrix, rotZ, [0, 0, 1]);
+		mat4.identity(objMatrix);
+		mat4.rotate(objMatrix, rotX, [1, 0, 0]);
+		mat4.rotate(objMatrix, rotZ, [0, 0, 1]);
+		mat4.translate(objMatrix,  [0, transZ, transZ], objMatrix);
 
-	lastMouseX = newX
-	lastMouseY = newY;
+		lastMouseX = newX
+		lastMouseY = newY;
+	}
+	
+	else if(event.buttons == 2) {
+	}
+	
+}
+
+// =====================================================
+function handleMouseWheel(event) {
+	console.log(event);		
+	mat4.translate(objMatrix,  [0, -event.detail/20, -event.detail/20], objMatrix);
+		transZ = transZ - event.detail/20;
 }

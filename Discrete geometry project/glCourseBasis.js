@@ -4,10 +4,19 @@ var gl;
 // =====================================================
 var mvMatrix = mat4.create();
 var pMatrix = mat4.create();
+var rMatrix = mat4.create();
 var objMatrix = mat4.create();
-var lumiere = [0,0,1];
+var lumiere = [0,0,5];
 // =====================================================
 
+function crossProduct(u, v)
+{
+	var x = u[1] * v[2] - u[2] * v[1];
+	var y = u[2] * v[0] - u[0] * v[2];
+	var z = u[0] * v[1] - u[1] * v[0];
+	
+	return [x, y, z];
+}
 
 function sub(b,a)
 {
@@ -96,7 +105,6 @@ Plane3D.draw = function()
 			this.setShadersParams();
 			setMatrixUniforms(this);
 			gl.drawArrays(gl.TRIANGLE_FAN, 0, this.vBuffer.numItems);
-			gl.drawArrays(gl.LINE_LOOP, 0, this.vBuffer.numItems);
 	}
 }
 
@@ -113,17 +121,14 @@ var Points3D = { fname: 'points', loaded:-1, shader:null };
 Points3D.initAll = function()
 {
 	vertices = [
-		-0.5, -0.1, 0.1,
-		-0.2,  0.3, 0.2,
-		 0.1,  0.1, 0.3,
-		 0.3, -0.2, 0.4
+		sliderLumX.value/10, sliderLumY.value/10, sliderLumZ.value/10
 	];
 
 	this.vBuffer2 = gl.createBuffer();
 	gl.bindBuffer(gl.ARRAY_BUFFER, this.vBuffer2);
 	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
 	this.vBuffer2.itemSize = 3;
-	this.vBuffer2.numItems = 4;
+	this.vBuffer2.numItems = 1;
 
 	loadShaders(this);
 }
@@ -141,6 +146,9 @@ Points3D.setShadersParams = function()
 
 	this.shader.pMatrixUniform = gl.getUniformLocation(this.shader, "uPMatrix");
 	this.shader.mvMatrixUniform = gl.getUniformLocation(this.shader, "uMVMatrix");
+		
+	var lum = gl.getUniformLocation(this.shader,"lumPos");
+	gl.uniform3f(lum, sliderLumX.value/10, sliderLumY.value/10, sliderLumZ.value/10);
 }
 
 // =====================================================
@@ -182,7 +190,7 @@ function sphericalCoordinate(theta, phi,scale,center)
 // =====================================================
 Sphere.initAll = function()
 {
-	var center = [0.1,0,0.4];
+	var center = [0.4,0.4,0.3];
 	var scale =0.25;
 	var i, j;
 	var nbT = 15;
@@ -265,12 +273,10 @@ Sphere.setShadersParams = function()
 	
 	this.shader.pMatrixUniform = gl.getUniformLocation(this.shader, "uPMatrix");
 	this.shader.mvMatrixUniform = gl.getUniformLocation(this.shader, "uMVMatrix");
+	this.shader.rMatrixUniform = gl.getUniformLocation(this.shader, "uRMatrix");	
 
-	var transX = gl.getUniformLocation(this.shader, "transX");
-	gl.uniform1f(transX, sliderSphereTranslateX.value/10);
-	
 	var lum = gl.getUniformLocation(this.shader,"lumPos");
-	gl.uniform3f(lum,lumiere[0],lumiere[1],lumiere[2]);
+	gl.uniform3f(lum, sliderLumX.value/10, sliderLumY.value/10, sliderLumZ.value/10);
 }
 
 // =====================================================
@@ -280,7 +286,6 @@ Sphere.draw = function()
 			this.setShadersParams();
 			setMatrixUniforms(this);
 			gl.drawArrays(gl.TRIANGLES, 0, this.vBuffer3.numItems);
-			gl.drawArrays(gl.LINE_LOOP, 0, this.vBuffer3.numItems);
 	}
 }
 
@@ -407,6 +412,10 @@ Tor.setShadersParams = function()
 
 	this.shader.pMatrixUniform = gl.getUniformLocation(this.shader, "uPMatrix");
 	this.shader.mvMatrixUniform = gl.getUniformLocation(this.shader, "uMVMatrix");
+	this.shader.rMatrixUniform = gl.getUniformLocation(this.shader, "uRMatrix");	
+		
+	var lum = gl.getUniformLocation(this.shader,"lumPos");
+	gl.uniform3f(lum, sliderLumX.value/10, sliderLumY.value/10, sliderLumZ.value/10);
 }
 
 // =====================================================
@@ -526,16 +535,6 @@ function bezierDV(controlPoints, bi, ni, u, v)
 	
 	return [x, y, z];
 }
-
-// =====================================================
-function crossProduct(u, v)
-{
-	var x = u[1] * v[2] - u[2] * v[1];
-	var y = u[2] * v[0] - u[0] * v[2];
-	var z = u[0] * v[1] - u[1] * v[0];
-	
-	return [x, y, z];
-}
  
 // =====================================================
 BSurface.initAll = function()
@@ -649,6 +648,10 @@ BSurface.setShadersParams = function()
 
 	this.shader.pMatrixUniform = gl.getUniformLocation(this.shader, "uPMatrix");
 	this.shader.mvMatrixUniform = gl.getUniformLocation(this.shader, "uMVMatrix");
+	this.shader.rMatrixUniform = gl.getUniformLocation(this.shader, "uRMatrix");	
+	
+	var lum = gl.getUniformLocation(this.shader,"lumPos");
+	gl.uniform3f(lum, sliderLumX.value/10, sliderLumY.value/10, sliderLumZ.value/10);
 }
 
 // =====================================================
@@ -704,7 +707,7 @@ Cone.initAll = function()
 	var dt = 2 * Math.PI / nbT;
 	
 	var vertices = [];
-	var normals = [];
+	var normalsSurface = [];
 	
 	var nH = coneNormal(top, center, h);
 	var nCenter = coneNormal(center, center, h);
@@ -716,28 +719,112 @@ Cone.initAll = function()
 		
 		var p2 = circleCoordinate(th1, 0, center, scale);
 		var p3 = circleCoordinate(th2, 0, center, scale);
+
+		// Normal surface cone
+		var u = sub(p2, top);
+		var v = sub(p3, top);
+		var n = crossProduct(u, v);
 		
-		var n2 = coneNormal(p2, center, h);
-		var n3 = coneNormal(p3, center, h);
-		
-		//triangle 1
+		//triangle 1 cone
 		vertices.push(top[0], top[1], top[2]);		
 		vertices.push(p2[0], p2[1], p2[2]);		
 		vertices.push(p3[0], p3[1], p3[2]);
 		
-		normals.push(nH[0], nH[1], nH[2]);
-		normals.push(n2[0], n2[1], n2[2]);
-		normals.push(n3[0], n3[1], n3[2]);
+		normalsSurface.push(n[0], n[1], n[2]);
+		normalsSurface.push(n[0], n[1], n[2]);
+		normalsSurface.push(n[0], n[1], n[2]);
 		
-		//triangle 2
+		// Normal surface base
+		u = sub(p3, center);
+		v = sub(p2, center);
+		n = crossProduct(u, v);
+		
+		//triangle 2 base
 		vertices.push(center[0], center[1], center[2]);
 		vertices.push(p3[0], p3[1], p3[2]);
 		vertices.push(p2[0], p2[1], p2[2]);
 		
-		normals.push(nCenter[0], nCenter[1], nCenter[2]);
-		normals.push(n2[0], n2[1], n2[2]);
-		normals.push(n3[0], n3[1], n3[2]);
+		normalsSurface.push(n[0], n[1], n[2]);
+		normalsSurface.push(n[0], n[1], n[2]);
+		normalsSurface.push(n[0], n[1], n[2]);
 		
+	}
+	
+	//Cone vertex normals top
+	var normalTop = [0, 0, 0];
+	for(i = 0; i < nbT; i++) {
+		normalTop[0] += normalsSurface[i*6];
+		normalTop[1] += normalsSurface[i*(6+1)];
+		normalTop[2] += normalsSurface[i*(6+2)];
+	}
+	
+	normalTop[0] += normalTop[0]/nbT;
+	normalTop[1] += normalTop[1]/nbT;
+	normalTop[2] += normalTop[2]/nbT;
+	
+	//Cone vertex normals
+	var normalsVertex = [];
+	for(i = 0; i < nbT; i++) {
+		if(i == 0){
+			//Cone
+			var s1n = [normalsSurface[(nbT-1)*6-3], normalsSurface[(nbT-1)*6-2], normalsSurface[(nbT-1)*6-1]];
+			var s2n = [normalsSurface[0], normalsSurface[1], normalsSurface[2]];
+			var s3n = [normalsSurface[6], normalsSurface[7], normalsSurface[8]];
+			
+			// normal Vertex 1 the top
+			normalsVertex.push(normalTop[0], normalTop[1], normalTop[2]);
+			// normal Vertex 2 left
+			var n1 = [(s1n[0]+s2n[0])/2, (s1n[1]+s2n[1])/2, (s1n[2]+s2n[2])/2];
+			normalsVertex.push(n1[0], n1[1], n1[2]);		
+			// normal Vertex 3 right
+			var n2 = [(s2n[0]+s3n[0])/2, (s2n[1]+s3n[1])/2, (s2n[2]+s3n[2])/2];
+			normalsVertex.push(n2[0], n2[1], n2[2]);
+			
+			//Base
+			normalsVertex.push(0, 0, -1);
+			normalsVertex.push(0, 0, -1);
+			normalsVertex.push(0, 0, -1);
+		}
+		else if(i == nbT-1) {
+			//Cone
+			var s1n = [normalsSurface[(nbT-1)*7-3], normalsSurface[(nbT-1)*6-2], normalsSurface[(nbT-1)*6-1]];
+			var s2n = [normalsSurface[i*6], normalsSurface[i*6+1], normalsSurface[i*6+2]];
+			var s3n = [normalsSurface[0], normalsSurface[1], normalsSurface[2]];
+			
+			// normal Vertex 1 the top
+			normalsVertex.push(normalTop[0], normalTop[1], normalTop[2]);
+			// normal Vertex 2 left
+			var n1 = [(s1n[0]+s2n[0])/2, (s1n[1]+s2n[1])/2, (s1n[2]+s2n[2])/2];
+			normalsVertex.push(n1[0], n1[1], n1[2]);		
+			// normal Vertex 3 right
+			var n2 = [(s2n[0]+s3n[0])/2, (s2n[1]+s3n[1])/2, (s2n[2]+s3n[2])/2];
+			normalsVertex.push(n2[0], n2[1], n2[2]);
+			
+			//Base
+			normalsVertex.push(0, 0, -1);
+			normalsVertex.push(0, 0, -1);
+			normalsVertex.push(0, 0, -1);
+		}
+		else{
+			//Cone
+			var s1n = [normalsSurface[i*6-3], normalsSurface[i*6-2], normalsSurface[i*6-1]];
+			var s2n = [normalsSurface[i*6], normalsSurface[i*6+1], normalsSurface[i*6+2]];
+			var s3n = [normalsSurface[i*6+1], normalsSurface[i*6+2], normalsSurface[i*6+3]];
+			
+			// normal Vertex 1 the top
+			normalsVertex.push(normalTop[0], normalTop[1], normalTop[2]);
+			// normal Vertex 2 left
+			var n1 = [(s1n[0]+s2n[0])/2, (s1n[1]+s2n[1])/2, (s1n[2]+s2n[2])/2];
+			normalsVertex.push(n1[0], n1[1], n1[2]);		
+			// normal Vertex 3 right
+			var n2 = [(s2n[0]+s3n[0])/2, (s2n[1]+s3n[1])/2, (s2n[2]+s3n[2])/2];
+			normalsVertex.push(n2[0], n2[1], n2[2]);
+			
+			//Base
+			normalsVertex.push(0, 0, -1);
+			normalsVertex.push(0, 0, -1);
+			normalsVertex.push(0, 0, -1);
+		}
 	}
 	
 	this.vBuffer6 = gl.createBuffer();
@@ -746,12 +833,21 @@ Cone.initAll = function()
 	this.vBuffer6.itemSize = 3;
 	this.vBuffer6.numItems = nbT * 6;
 		
+	// Surface normals
 	this.nBuffer6 = gl.createBuffer();
 	gl.bindBuffer(gl.ARRAY_BUFFER, this.nBuffer6);
-	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(normals), gl.STATIC_DRAW);
+	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(normalsSurface), gl.STATIC_DRAW);
 	this.nBuffer6.itemSize = 3;
 	this.nBuffer6.numItems = nbT * 6;
 
+	// Vertex normals
+	/*
+	this.nBuffer6 = gl.createBuffer();
+	gl.bindBuffer(gl.ARRAY_BUFFER, this.nBuffer6);
+	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(normalsVertex), gl.STATIC_DRAW);
+	this.nBuffer6.itemSize = 3;
+	this.nBuffer6.numItems = nbT * 6;
+	*/
 	loadShaders(this);
 }
 
@@ -773,7 +869,10 @@ Cone.setShadersParams = function()
 
 	this.shader.pMatrixUniform = gl.getUniformLocation(this.shader, "uPMatrix");
 	this.shader.mvMatrixUniform = gl.getUniformLocation(this.shader, "uMVMatrix");
+	this.shader.rMatrixUniform = gl.getUniformLocation(this.shader, "uRMatrix");
 
+	var lum = gl.getUniformLocation(this.shader,"lumPos");
+	gl.uniform3f(lum, sliderLumX.value/10, sliderLumY.value/10, sliderLumZ.value/10);
 }
 
 // =====================================================
@@ -783,7 +882,6 @@ Cone.draw = function()
 		this.setShadersParams();
 		setMatrixUniforms(this);
 		gl.drawArrays(gl.TRIANGLES, 0, this.vBuffer6.numItems);
-		gl.drawArrays(gl.LINE_LOOP, 0, this.vBuffer6.numItems);
 	}
 }
 
@@ -811,7 +909,7 @@ Cylinder.initAll = function()
 	var h = 0.7;
 	var downCenter = [0.0, 0.0, 0.0];
 	var upCenter = [0.0, 0.0, h]; 
-	var nbT = 10;
+	var nbT = 200;
 	var dt = 2 * Math.PI / nbT;
 	
 	var vertices = [];
@@ -906,6 +1004,10 @@ Cylinder.setShadersParams = function()
 
 	this.shader.pMatrixUniform = gl.getUniformLocation(this.shader, "uPMatrix");
 	this.shader.mvMatrixUniform = gl.getUniformLocation(this.shader, "uMVMatrix");
+	this.shader.rMatrixUniform = gl.getUniformLocation(this.shader, "uRMatrix");
+
+	var lum = gl.getUniformLocation(this.shader,"lumPos");
+	gl.uniform3f(lum, sliderLumX.value/10, sliderLumY.value/10, sliderLumZ.value/10);
 
 }
 
@@ -1054,7 +1156,6 @@ Fur.draw = function()
 		this.setShadersParams();
 		setMatrixUniforms(this);
 		gl.drawArrays(gl.TRIANGLES, 0, this.vBuffer8.numItems);
-		gl.drawArrays(gl.LINE_LOOP, 0, this.vBuffer8.numItems);
 	}
 }
 
@@ -1072,7 +1173,8 @@ function webGLStart() {
 	canvas.onmousedown = handleMouseDown;
 	document.onmouseup = handleMouseUp;
 	document.onmousemove = handleMouseMove;
-
+	canvas.addEventListener("DOMMouseScroll", handleMouseWheel, false);
+	
 	initGL(canvas);
 
 	//Plane3D.initAll();
@@ -1162,7 +1264,10 @@ function setMatrixUniforms(Obj3D) {
 		mat4.identity(mvMatrix);
 		mat4.translate(mvMatrix, [0.0, 0.0, -2.0]);
 		mat4.multiply(mvMatrix, objMatrix);
+		mat4.identity(rMatrix);
+		mat4.multiply(rMatrix, objMatrix);
 		gl.uniformMatrix4fv(Obj3D.shader.pMatrixUniform, false, pMatrix);
+		gl.uniformMatrix4fv(Obj3D.shader.rMatrixUniform, false, rMatrix);
 		gl.uniformMatrix4fv(Obj3D.shader.mvMatrixUniform, false, mvMatrix);
 }
 
@@ -1228,7 +1333,7 @@ function drawScene()
 	gl.clear(gl.COLOR_BUFFER_BIT);
 	if(shadersOk()) {
 		Plane3D.draw();
-		Points3D.draw();
+		//Points3D.draw();
 		Sphere.draw();
 		Tor.draw();
 		Cone.draw();

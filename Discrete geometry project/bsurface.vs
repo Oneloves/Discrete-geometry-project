@@ -1,14 +1,26 @@
+
 attribute vec3 vPosBSurface;
 attribute vec3 vNormal;
 
+uniform float transX;
+uniform vec3 lumPos;
 uniform mat4 uMVMatrix;
 uniform mat4 uPMatrix;
+uniform mat4 uRMatrix;
 
-varying vec3 dirLum;
-varying vec3 norm;
+varying vec3 L;
+varying vec3 N;
+varying vec3 V;
+varying vec3 H;
 
 void main(void) {
-	norm = vNormal;
-	dirLum = normalize(vec3(0.0, 0.0, 1.0)-vPosBSurface);
+	
+	vec3 p3d = (uMVMatrix*vec4(vPosBSurface,1.0)).xyz ;
+	V = -p3d;
+	vec3 lPos = (uMVMatrix*vec4(lumPos,1.0)).xyz;
+	
+	N = (uRMatrix*vec4(vNormal,1.0)).xyz;
+	L = lPos-p3d;
+	H = L+V;
 	gl_Position = uPMatrix * uMVMatrix * vec4(vPosBSurface, 1.0);
 }
