@@ -8,7 +8,7 @@ varying vec3 H;
 
 void main(void)
 {
-	float rug = 0.2;	
+	float rug = 0.15;	
 	//coef spéculaire de cook
 	
 	vec3 l = normalize(L);
@@ -24,8 +24,8 @@ void main(void)
 	float D = (exp((-tan2)/m2))/(M_PI*m2*cos4);
 	
 	//coeff G dans cook
-	float t1 = (2.0*dot(h,n)*dot(v,n))/dot(v,h);
-	float t2 = (2.0*dot(h,n)*dot(l,n))/dot(v,h);
+	float t1 = (2.0*dot(h,n)*dot(v,n))/(dot(v,h));
+	float t2 = (2.0*dot(h,n)*dot(l,n))/(dot(v,h));
 	float G = min(t1,t2);
 	G = min(G,1.0);
 	
@@ -50,7 +50,7 @@ void main(void)
 	
 	float co = kd *clamp(dot(n,l),0.0,1.0)+ ka;
 
-	vec3 couleur = vec3(1,0,1)*co;
+	vec3 couleur = vec3(1,1,1)*co;
 	
 	couleur += ks;
 	

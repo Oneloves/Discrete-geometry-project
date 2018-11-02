@@ -26,10 +26,20 @@ void main(void) {
 	
 	vec3 p3d = (uMVMatrix*vec4(vPosSphere,1.0)).xyz ;
 	V = -p3d;
+	
+	
 	vec3 lPos = (uMVMatrix*vec4(lumPos,1.0)).xyz;
 	
 	N = (uRMatrix*vec4(vNormal,1.0)).xyz;
-	L = lPos-p3d;
+	N = normalize(N);
+	
+	L = lumPos-vPosSphere;
+	L = (uRMatrix*vec4(L,1.0)).xyz;
+	
 	H = L+V;
+	H = normalize(H);
+	L = normalize(L);
+	V = normalize(V);
+	
 	gl_Position = uPMatrix * uMVMatrix * (translate(transX, 0.0, 0.0) * vec4(vPosSphere, 1.0));
 }
